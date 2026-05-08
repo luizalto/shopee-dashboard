@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0e1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Shopee Dashboard">
+<link rel="manifest" href="/manifest.json">
+<title>Shopee Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #080c18;
+    --bg2:       #0d1220;
+    --bg3:       #121828;
+    --border:    rgba(255,255,255,0.06);
+    --accent:    #f05a28;
+    --accent2:   #ff8c55;
+    --green:     #22d47a;
+    --blue:      #3d8ef0;
+    --text:      #e8eaf0;
+    --text2:     #7a8099;
+    --text3:     #4a5070;
+    --radius:    16px;
+    --mono:      'DM Mono', monospace;
+    --sans:      'Syne', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  /* BACKGROUND MESH */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% -10%, rgba(240,90,40,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 110%, rgba(61,142,240,0.08) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 0 0 100px; }
+
+  /* HEADER */
+  .header {
+    padding: 56px 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-left { display: flex; flex-direction: column; gap: 2px; }
+  .header-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--text3); font-family: var(--mono); }
+  .header-title { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+  .header-title span { color: var(--accent); }
+  .logo-badge {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 8px 24px rgba(240,90,40,0.35);
+  }
+
+  /* CARDS TOPO */
+  .cards-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 0 20px;
+    margin-bottom: 20px;
+  }
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 16px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    border-radius: 2px 2px 0 0;
+  }
+  .card.green::before { background: var(--green); }
+  .card.blue::before  { background: var(--blue); }
+  .card-icon { font-size: 20px; margin-bottom: 8px; }
+  .card-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text3); font-family: var(--mono); margin-bottom: 4px; }
+  .card-value { font-size: 20px; font-weight: 700; font-family: var(--mono); line-height: 1; }
+  .card.green .card-value { color: var(--green); }
+  .card.blue  .card-value { color: var(--blue); }
+
+  /* FILTROS */
+  .filters {
+    padding: 0 20px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .filter-row { display: flex; gap: 10px; }
+  .input-wrap {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .input-icon {
+    position: absolute;
+    left: 14px;
+    font-size: 14px;
+    color: var(--text3);
+    pointer-events: none;
+  }
+  input[type="date"], input[type="search"] {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px 12px 38px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.5);
+    cursor: pointer;
+  }
+  input:focus {
+    border-color: rgba(240,90,40,0.4);
+    box-shadow: 0 0 0 3px rgba(240,90,40,0.08);
+  }
+  .btn-search {
+    background: var(--accent);
+    border: none;
+    border-radius: 12px;
+    padding: 12px 18px;
+    color: white;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, transform 0.1s;
+    box-shadow: 0 4px 16px rgba(240,90,40,0.3);
+  }
+  .btn-search:active { transform: scale(0.97); }
+
+  /* SECTION HEADER */
+  .section-header {
+    padding: 0 20px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .section-title { font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text3); font-family: var(--mono); }
+  .section-count {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text2);
+  }
+
+  /* LISTA */
+  .list { padding: 0 20px; display: flex; flex-direction: column; gap: 8px; }
+
+  .item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: border-color 0.2s, transform 0.15s;
+    cursor: pointer;
+    animation: slideUp 0.3s ease both;
+  }
+  .item:active { transform: scale(0.99); }
+  .item:hover  { border-color: rgba(240,90,40,0.2); }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .item-rank {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; font-family: var(--mono);
+    flex-shrink: 0;
+  }
+  .rank-1 { background: rgba(255,200,0,0.15); color: #ffc800; }
+  .rank-2 { background: rgba(180,180,180,0.12); color: #b0b0b0; }
+  .rank-3 { background: rgba(180,100,50,0.15); color: #cd7c4a; }
+  .rank-n { background: var(--bg3); color: var(--text3); }
+
+  .item-body { flex: 1; min-width: 0; }
+  .item-subid {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+  }
+  .item-subid strong { color: var(--text); font-weight: 500; }
+  .item-meta { display: flex; align-items: center; gap: 8px; }
+  .badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: var(--bg3);
+    color: var(--text3);
+    border: 1px solid var(--border);
+  }
+  .badge.orders { color: var(--blue); border-color: rgba(61,142,240,0.2); background: rgba(61,142,240,0.06); }
+
+  .item-commission {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--green);
+    white-space: nowrap;
+    text-align: right;
+  }
+
+  /* ESTADO VAZIO / LOADING */
+  .state-center {
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--text3);
+  }
+  .state-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
+  .state-text { font-size: 13px; font-family: var(--mono); }
+
+  /* LOADING SPINNER */
+  .spinner {
+    width: 32px; height: 32px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 80px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text2);
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 100;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* NAV BOTTOM */
+  .nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(8,12,24,0.9);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    padding: 12px 0 max(12px, env(safe-area-inset-bottom));
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    z-index: 50;
+  }
+  .nav-item {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--text3); font-family: var(--mono);
+    cursor: pointer; padding: 4px 12px; border-radius: 10px;
+    transition: color 0.2s;
+  }
+  .nav-item.active { color: var(--accent); }
+  .nav-icon { font-size: 18px; }
+
+  /* DIVIDER */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 20px 20px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="header-left">
+      <span class="header-label">Afiliados</span>
+      <h1 class="header-title">Shopee <span>Pro</span></h1>
+    </div>
+    <div class="logo-badge">🛍</div>
+  </div>
+
+  <!-- CARDS -->
+  <div class="cards-row">
+    <div class="card green">
+      <div class="card-icon">💰</div>
+      <div class="card-label">Comissão</div>
+      <div class="card-value" id="totalComm">—</div>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">📦</div>
+      <div class="card-label">Pedidos</div>
+      <div class="card-value" id="totalOrders">—</div>
+    </div>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="filters">
+    <div class="filter-row">
+      <div class="input-wrap">
+        <span class="input-icon">📅</span>
+        <input type="date" id="dateInput">
+      </div>
+    </div>
+    <div class="filter-row">
+      <div class="input-wrap">
+        <span class="input-icon">🔍</span>
+        <input type="search" id="searchInput" placeholder="Filtrar por sub_id...">
+      </div>
+      <button class="btn-search" onclick="buscar()">Buscar</button>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SECTION HEADER -->
+  <div class="section-header">
+    <span class="section-title">Sub IDs</span>
+    <span class="section-count" id="countBadge">—</span>
+  </div>
+
+  <!-- LISTA -->
+  <div class="list" id="list">
+    <div class="state-center">
+      <div class="state-icon">📊</div>
+      <div class="state-text">Selecione uma data e clique em Buscar</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- NAV -->
+<div class="nav">
+  <div class="nav-item active">
+    <span class="nav-icon">📊</span>
+    Dashboard
+  </div>
+</div>
+
+<script>
+  // PWA Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+
+  // Data padrão = ontem
+  function ontem() {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().split('T')[0];
+  }
+
+  const dateInput   = document.getElementById('dateInput');
+  const searchInput = document.getElementById('searchInput');
+  dateInput.value   = ontem();
+
+  // Enter no search dispara busca
+  searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') buscar(); });
+
+  function fmt(v) {
+    return 'R$ ' + v.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  }
+
+  function rankClass(i) {
+    if (i === 0) return 'rank-1';
+    if (i === 1) return 'rank-2';
+    if (i === 2) return 'rank-3';
+    return 'rank-n';
+  }
+
+  function renderLoading() {
+    document.getElementById('list').innerHTML = `
+      <div class="state-center">
+        <div class="spinner"></div>
+        <div class="state-text">Buscando dados...</div>
+      </div>`;
+  }
+
+  function renderEmpty() {
+    document.getElementById('list').innerHTML = `
+      <div class="state-center">
+        <div class="state-icon">🔍</div>
+        <div class="state-text">Nenhum resultado encontrado</div>
+      </div>`;
+    document.getElementById('totalComm').textContent   = 'R$ 0,00';
+    document.getElementById('totalOrders').textContent = '0';
+    document.getElementById('countBadge').textContent  = '0 itens';
+  }
+
+  function renderError(msg) {
+    document.getElementById('list').innerHTML = `
+      <div class="state-center">
+        <div class="state-icon">⚠️</div>
+        <div class="state-text">${msg}</div>
+      </div>`;
+  }
+
+  function render(data) {
+    document.getElementById('totalComm').textContent   = fmt(data.total_commission);
+    document.getElementById('totalOrders').textContent = data.total_orders;
+    document.getElementById('countBadge').textContent  = data.items.length + ' itens';
+
+    if (!data.items.length) { renderEmpty(); return; }
+
+    const html = data.items.map((item, i) => `
+      <div class="item" style="animation-delay:${i * 0.03}s" onclick="copiar('${item.sub_id}')">
+        <div class="item-rank ${rankClass(i)}">${i + 1}</div>
+        <div class="item-body">
+          <div class="item-subid"><strong>${item.sub_id}</strong></div>
+          <div class="item-meta">
+            <span class="badge orders">📦 ${item.orders} pedidos</span>
+          </div>
+        </div>
+        <div class="item-commission">${fmt(item.commission)}</div>
+      </div>
+    `).join('');
+
+    document.getElementById('list').innerHTML = html;
+  }
+
+  async function buscar() {
+    const date   = dateInput.value;
+    const search = searchInput.value.trim();
+
+    if (!date) { showToast('Selecione uma data'); return; }
+
+    renderLoading();
+
+    try {
+      const params = new URLSearchParams({ date });
+      if (search) params.set('search', search);
+
+      const resp = await fetch(`/api/shopee?${params}`);
+      const data = await resp.json();
+
+      if (data.error) { renderError(data.error); return; }
+      render(data);
+    } catch (e) {
+      renderError('Erro ao conectar com o servidor');
+    }
+  }
+
+  function copiar(texto) {
+    navigator.clipboard.writeText(texto)
+      .then(() => showToast('✓ Copiado: ' + texto))
+      .catch(() => showToast('Toque novamente para copiar'));
+  }
+</script>
+</body>
+</html>
