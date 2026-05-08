@@ -8,18 +8,18 @@ from flask import Flask, request, jsonify, send_from_directory
 
 app = Flask(__name__, static_folder="static")
 
-SHOPEE_APP_ID   = os.environ.get("SHOPEE_APP_ID", "")
-SHOPEE_SECRET   = os.environ.get("SHOPEE_SECRET", "")
 SHOPEE_ENDPOINT = "https://open-api.affiliate.shopee.com.br/graphql"
 BRT             = timezone(timedelta(hours=-3))
 
 def shopee_auth_header(payload):
+    SHOPEE_APP_ID = os.environ.get("SHOPEE_APP_ID", "")
+    SHOPEE_SECRET = os.environ.get("SHOPEE_SECRET", "")
     timestamp = str(int(time.time()))
     factor    = SHOPEE_APP_ID + timestamp + payload + SHOPEE_SECRET
     signature = hashlib.sha256(factor.encode()).hexdigest()
     return {
         "Content-Type":  "application/json",
-        "Authorization": f"SHA256 Credential={SHOPEE_APP_ID}, Timestamp={timestamp}, Signature={signature}"
+        "Authorization": f"SHA256 Credential={os.environ.get('SHOPEE_APP_ID', '')}, Timestamp={timestamp}, Signature={signature}"
     }
 
 GQL_QUERY = """{{
