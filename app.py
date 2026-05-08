@@ -2,17 +2,16 @@ import hashlib
 import json
 import os
 import time
-import re
 import requests
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urlparse, parse_qs
+from flask import Flask, request, jsonify, send_from_directory
+
+app = Flask(__name__, static_folder="static")
 
 SHOPEE_APP_ID   = os.environ.get("SHOPEE_APP_ID", "")
 SHOPEE_SECRET   = os.environ.get("SHOPEE_SECRET", "")
 SHOPEE_ENDPOINT = "https://open-api.affiliate.shopee.com.br/graphql"
 BRT             = timezone(timedelta(hours=-3))
-
-STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
 def shopee_auth_header(payload):
     timestamp = str(int(time.time()))
@@ -32,22 +31,15 @@ GQL_QUERY = """{{
   ) {{
     nodes {{
       conversionId
-      purchaseTime
       utmContent
       totalCommission
-      orders {{
-        orderId
-        orderStatus
-      }}
+      orders {{ orderStatus }}
     }}
-    pageInfo {{
-      hasNextPage
-      scrollId
-    }}
+    pageInfo {{ hasNextPage scrollId }}
   }}
 }}"""
 
-def extract_external_id(utm):
+def extract_sub_id(utm):
     if not utm:
         return ""
     s = str(utm).strip()
@@ -74,9 +66,7 @@ def fetch_data(date_str, search=""):
         scroll_part = f', scrollId: "{scroll_id}"' if scroll_id else ""
         query       = GQL_QUERY.format(start=start, end=end, scroll=scroll_part)
         payload_str = json.dumps({"query": query})
-        headers     = shopee_auth_header(payload_str)
-
-        resp = requests.post(SHOPEE_ENDPOINT, headers=headers, data=payload_str, timeout=30)
+        resp        = requests.post(SHOPEE_ENDPOINT, headers=shopee_auth_header(payload_str), data=payload_str, timeout=30)
         resp.raise_for_status()
         body = resp.json()
 
@@ -88,9 +78,7 @@ def fetch_data(date_str, search=""):
         page_info = report.get("pageInfo", {})
 
         for node in nodes:
-            orders    = node.get("orders", [])
-            has_valid = any(o.get("orderStatus", "").upper() in valid for o in orders)
-            if has_valid:
+            if any(o.get("orderStatus", "").upper() in valid for o in node.get("orders", [])):
                 all_nodes.append(node)
 
         if not page_info.get("hasNextPage"):
@@ -103,18 +91,17 @@ def fetch_data(date_str, search=""):
     groups = {}
     for node in all_nodes:
         utm    = node.get("utmContent", "") or ""
-        sub_id = extract_external_id(utm)
+        sub_id = extract_sub_id(utm)
 
         if search and search.lower() not in sub_id.lower() and search.lower() not in utm.lower():
             continue
 
         try:
             commission = float(node.get("totalCommission") or 0)
-        except (ValueError, TypeError):
+        except Exception:
             commission = 0.0
 
-        orders       = node.get("orders", [])
-        valid_orders = [o for o in orders if o.get("orderStatus", "").upper() in {"PENDING", "COMPLETED"}]
+        valid_orders = [o for o in node.get("orders", []) if o.get("orderStatus", "").upper() in valid]
 
         if sub_id not in groups:
             groups[sub_id] = {"sub_id": sub_id, "commission": 0.0, "orders": 0}
@@ -133,60 +120,30 @@ def fetch_data(date_str, search=""):
     }
 
 
-def app(environ, start_response):
-    path   = environ.get("PATH_INFO", "/")
-    method = environ.get("REQUEST_METHOD", "GET")
+@app.route("/")
+def index():
+    return send_from_directory("static", "index.html")
 
-    cors = [
-        ("Access-Control-Allow-Origin",  "*"),
-        ("Access-Control-Allow-Methods", "GET, OPTIONS"),
-    ]
+@app.route("/manifest.json")
+def manifest():
+    return send_from_directory("static", "manifest.json")
 
-    if method == "OPTIONS":
-        start_response("200 OK", cors)
-        return [b""]
+@app.route("/sw.js")
+def sw():
+    resp = send_from_directory("static", "sw.js")
+    resp.headers["Service-Worker-Allowed"] = "/"
+    return resp
 
-    # HTML
-    if path in ("/", "/index.html"):
-        body = open(os.path.join(STATIC_DIR, "index.html"), "rb").read()
-        start_response("200 OK", [("Content-Type", "text/html; charset=utf-8")])
-        return [body]
+@app.route("/api/shopee")
+def api_shopee():
+    date_str = request.args.get("date", "")
+    search   = request.args.get("search", "")
 
-    # manifest
-    if path == "/manifest.json":
-        body = open(os.path.join(STATIC_DIR, "manifest.json"), "rb").read()
-        start_response("200 OK", [("Content-Type", "application/json")])
-        return [body]
+    if not date_str:
+        date_str = (datetime.now(BRT) - timedelta(days=1)).date().strftime("%Y-%m-%d")
 
-    # sw.js
-    if path == "/sw.js":
-        body = open(os.path.join(STATIC_DIR, "sw.js"), "rb").read()
-        start_response("200 OK", [
-            ("Content-Type", "application/javascript"),
-            ("Service-Worker-Allowed", "/")
-        ])
-        return [body]
-
-    # API
-    if path.startswith("/api"):
-        qs       = environ.get("QUERY_STRING", "")
-        params   = parse_qs(qs)
-        date_str = params.get("date",   [""])[0]
-        search   = params.get("search", [""])[0]
-
-        if not date_str:
-            date_str = (datetime.now(BRT) - timedelta(days=1)).date().strftime("%Y-%m-%d")
-
-        try:
-            result = fetch_data(date_str, search)
-            body   = json.dumps(result).encode()
-            status = "200 OK"
-        except Exception as e:
-            body   = json.dumps({"error": str(e)}).encode()
-            status = "500 Internal Server Error"
-
-        start_response(status, [("Content-Type", "application/json")] + cors)
-        return [body]
-
-    start_response("404 Not Found", [("Content-Type", "text/plain")])
-    return [b"Not found"]
+    try:
+        result = fetch_data(date_str, search)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
