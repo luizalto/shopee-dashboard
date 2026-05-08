@@ -12,8 +12,8 @@ SHOPEE_ENDPOINT = "https://open-api.affiliate.shopee.com.br/graphql"
 BRT             = timezone(timedelta(hours=-3))
 
 def shopee_auth_header(payload):
-    SHOPEE_APP_ID = os.environ.get("SHOPEE_APP_ID", "")
-    SHOPEE_SECRET = os.environ.get("SHOPEE_SECRET", "")
+    SHOPEE_APP_ID = "18314810331"
+    SHOPEE_SECRET = "LO3QSEG45TYP4NYQBRXLA2YYUL3ZCUPN"
     timestamp = str(int(time.time()))
     factor    = SHOPEE_APP_ID + timestamp + payload + SHOPEE_SECRET
     signature = hashlib.sha256(factor.encode()).hexdigest()
